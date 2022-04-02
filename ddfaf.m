@@ -22,7 +22,7 @@ function varargout = ddfaf(varargin)
 
 % Edit the above text to modify the response to help ddfaf
 
-% Last Modified by GUIDE v2.5 02-Apr-2022 19:56:44
+% Last Modified by GUIDE v2.5 02-Apr-2022 22:36:48
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -92,6 +92,11 @@ function varargout = ddfaf_OutputFcn(hObject, eventdata, handles)
 % Get default command line output from handles structure
 varargout{1} = handles.output;
 % --- Executes on button press in nula.
+% --- Executes on button press in j.
+function j_Callback(hObject, eventdata, handles)
+x = get(handles.statictext,'String');
+set(handles.statictext,'String',strcat(x,'i'));
+
 function nula_Callback(hObject, eventdata, handles)
 % hObject    handle to nula (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -172,8 +177,19 @@ function devet_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 x = get(handles.statictext,'String');
 set(handles.statictext,'String',strcat(x,'9'));
-
-% --- Executes on button press in plus.
+function pluss_Callback(hObject, eventdata, handles)
+% hObject    handle to devet (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+x = get(handles.statictext,'String');
+set(handles.statictext,'String',strcat(x,'+'));
+function minuss_Callback(hObject, eventdata, handles)
+% hObject    handle to devet (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+x = get(handles.statictext,'String');
+set(handles.statictext,'String',strcat(x,'-'));
+% --- Executes on button press in pluss.
 function plus_Callback(hObject, eventdata, handles)
 x = get(handles.statictext,'String');
 global a Selector
@@ -181,9 +197,9 @@ a = str2num(get(handles.statictext,'String'))
 Selector = 1;
 set(handles.statictext,'String','');
 
-% --- Executes on button press in minus.
+% --- Executes on button press in minuss.
 function minus_Callback(hObject, eventdata, handles)
-% hObject    handle to minus (see GCBO)
+% hObject    handle to minuss (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 x = get(handles.statictext,'String');
@@ -425,19 +441,19 @@ switch Selector
         a = tan(str2num(get(handles.statictext,'String')));
         set(handles.statictext, 'String',num2str(a));
     case 10
-        a = arcsin(str2num(get(handles.statictext,'String')));
+        a = asin(str2num(get(handles.statictext,'String')));
         set(handles.statictext, 'String',num2str(a));
     case 11
-        a = arccos(str2num(get(handles.statictext,'String')));
+        a = acos(str2num(get(handles.statictext,'String')));
         set(handles.statictext, 'String',num2str(a));
     case 12
         a = cot(str2num(get(handles.statictext,'String')));
         set(handles.statictext, 'String',num2str(a));
     case 13
-        a = arctan(str2num(get(handles.statictext,'String')));
+        a = atan(str2num(get(handles.statictext,'String')));
         set(handles.statictext, 'String',num2str(a));
     case 14
-        a = arccot(str2num(get(handles.statictext,'String')));
+        a = acot(str2num(get(handles.statictext,'String')));
         set(handles.statictext, 'String',num2str(a));
     case 15
         a = exp(str2num(get(handles.statictext,'String')));
