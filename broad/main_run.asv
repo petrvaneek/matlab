@@ -1,0 +1,75 @@
+%% main_run.m  — minimální průtah Tx→kanál→Rx (LTE-based PMCH-like demo)
+clear; clc;
+
+% ==== PRESET (lab: 10 MHz, Extended CP) ====
+enb = struct('NDLRB',50,'CyclicPrefix','Extended','DuplexMode','FDD', ...
+             'CellRefP',1,'NCellID',1,'NSubframe',0);
+
+mod   = 'QPSK';      % 'QPSK' | '16QAM' | '64QAM' | '256QAM'
+rv    = 0;
+TBlen = 2048;        % délka transport bloku (bit)
+SNRdB = 20;          % cílové SNR do AWGN
+
+% ==== TX: FEC řetězec ====
+% (nejdřív z masky zjistíme, kolik máme datových RE → E)
+dummyGrid = lteDLResourceGrid(enb,1); %#ok<NASGU>
+dataMask  = makePMCHMask(enb, 2, 6, 4);        % ctrl=2 symboly, demo comb 6x4
+
+modChar = char(mod);                  % <- DŮLEŽITÉ: char vektor pro LTE funkce
+umod = upper(modChar);
+switch umod
+    case 'QPSK'
+        Mbits = 2;
+    case '16QAM'
+        Mbits = 4;
+    case '64QAM'
+        Mbits = 6;
+    case '256QAM'
+        Mbits = 8;
+    otherwise
+        error('Neznámá modulace: %s', modChar);
+end
+E = nnz(dataMask) * Mbits;                      % počet bitů po rate-match
+
+tbBits = randi([0 1], TBlen, 1);
+cw     = tx_fec_encode(tbBits, E, rv);          % CRC→seg→Turbo→rate-match
+txSym  = lteSymbolModulate(cw, mod);            % QAM mapování
+
+% ==== TX: mapování do gridu + OFDM+WOLA ====
+[grid, dataMask, dataIdx] = tx_buildGrid(enb, txSym); %#ok<ASGLU>
+[txWave, ofdmInfo] = tx_ofdm_mod(enb, grid, 'lte', 1/8);  % WOLA s roll≈CP/8
+
+% ==== KANÁL: Rayleigh/EPA + volitelný SFN + AWGN ====
+oi = lteOFDMInfo(enb);  % pro SamplingRate
+chCfg = struct('type','EPA','Fs',oi.SamplingRate,'fc',650e6,'speedKmh',80);
+sfnCfg= struct('enable',true, ...
+               'delaySamp', round(min(ofdmInfo.CyclicPrefixLengths)/2), ...
+               'attenLin', 0.8);
+rxWave = ch_sfn_channel(txWave, chCfg, sfnCfg, SNRdB);
+
+% ==== RX: OFDM demodulace + (základní) odhad kanálu + extrakce dat ====
+[rxGrid, hest, nest, rxDataSym] = rx_ofdm_demod(enb, rxWave, dataMask); %#ok<ASGLU>
+
+% ==== RX: správná LLR demodulace (délka výstupu = E) ====
+% noiseVar – hrubý odhad (můžeš zpřesnit podle 'nest')
+% noiseVar – hrubý odhad (můžeš zpřesnit podle 'nest')
+if isempty(nest)
+    noiseVar = 10^(-SNRdB/10);
+else
+    noiseVar = double(nest);
+end
+
+% DŮLEŽITÉ: použij modChar (char vektor), ne mod
+llr = lteSymbolDemodulate(rxDataSym, modChar, noiseVar);
+
+if numel(llr) ~= E
+    warning('LLR length (%d) != E from Tx (%d). Zkontroluj masku/modulaci.', numel(llr), E);
+end
+
+% ==== RX: FEC dekódování ====
+[tbHat, crcOK] = rx_fec_decode(llr, TBlen, rv);
+fprintf('CRC OK = %d\n', crcOK);
+
+% === volitelná rychlá metrika chyb ===
+ber = mean(tbBits ~= tbHat);
+fprintf('BER (po FEC) ~ %.3g\n', ber);
